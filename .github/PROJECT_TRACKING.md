@@ -44,7 +44,7 @@ fantasy-futsal/
 ## Git Strategy
 
 - **Branching**: Feature branches with rebase strategy
-- **Commits**: Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, etc.)
+- **Commits**: [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `chore:`, `docs:`, etc.)
 - **Merging**: Squash merge to main via PR with rebase
 - **History**: Clean, linear history with meaningful commit messages
 
