@@ -1,3 +1,6 @@
 packages:
   - 'apps/frontend'
   - 'libs/ts/*'
+allowBuilds:
+  '@tailwindcss/oxide': true
+  esbuild: true
