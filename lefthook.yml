@@ -2,10 +2,10 @@ pre-commit:
   parallel: true
   commands:
     lint:
-      glob: '*.{js,ts,json}'
+      glob: '*.{js,ts,svelte,json}'
       run: pnpm exec eslint --fix {staged_files}
     format:
-      glob: '*.{js,ts,json,md}'
+      glob: '*.{js,ts,svelte,json,md,yml,yaml}'
       run: pnpm exec prettier --write {staged_files}
 
 commit-msg:
