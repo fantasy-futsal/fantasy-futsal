@@ -40,7 +40,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 ### Windows
 
-You have two options. **WSL2 is strongly recommended** — it gives you a real Linux environment, the tooling "just works," and you follow the macOS/Linux steps above verbatim. (So no, you don't need to cancel the project — Windows is fine. 🙂)
+You have two options. **WSL2 is strongly recommended** — it gives you a real Linux environment, the tooling "just works," and you follow the macOS/Linux steps above verbatim. Native Windows works too, but expect a few more rough edges.
 
 **Option A — WSL2 (recommended)**
 
