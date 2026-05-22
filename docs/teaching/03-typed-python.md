@@ -113,7 +113,7 @@ FastAPI integrates with Pydantic — your route signatures use these models and 
 
 ### Protocol — for interface contracts
 
-You already met this in [doc 04](04-ports-and-adapters.md). Recap: a `Protocol` describes "the shape of an object" without forcing inheritance. It's how we say "the API doesn't care which database implementation it gets, as long as it has these methods."
+A `Protocol` describes "the shape of an object" without forcing inheritance. It's how we say "the API doesn't care which database implementation it gets, as long as it has these methods." [Doc 04](04-ports-and-adapters.md) is entirely about this idea — here we just place it next to the dataclass and Pydantic so you can see how the three relate.
 
 Use a `Protocol` when you have **multiple implementations** of the same conceptual thing (SQLite vs Postgres vs in-memory fake for tests). For a thing with one implementation, just use the class directly — don't write a Protocol for it.
 
