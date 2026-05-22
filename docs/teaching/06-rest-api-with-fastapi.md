@@ -4,9 +4,11 @@
 
 ## What an HTTP API is, in our context
 
-The scraper writes data into the database. The frontend wants to show it in a table. Those two pieces don't run in the same process — the scraper is a CLI script, the frontend is a JavaScript app in a browser. They need a way to talk.
+The scraper writes data into the database. The frontend wants to show it in a table. Those two pieces don't run in the same process — the scraper is a standalone service ([doc 01](01-the-big-picture.md#the-scraper-is-a-separate-service)), the frontend is a JavaScript app in a browser. They need a way to talk.
 
 The way they talk is **HTTP**: the frontend sends an HTTP request like `GET /players`, our backend receives it, looks up the data via the `DatabasePort`, and returns it as JSON. That backend is a **REST API**, and we're writing it with **FastAPI**.
+
+**The backend presumes the scraper has already run.** It does not trigger the scraper, wait for it, or even know whether it ran five minutes or five days ago. It just reads whatever is in the database right now and serves it. If the database is empty because nobody ran the scraper yet, `GET /players` returns an empty list — which is correct behavior, not a bug. The scraper and the backend are decoupled; they meet only at the database, which is the single source of truth.
 
 The simplest possible version of this is one route:
 

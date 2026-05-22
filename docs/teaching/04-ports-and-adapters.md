@@ -176,6 +176,102 @@ When we move to Firestore, we change `get_db()` and **nothing else**. The route 
 
 This pattern — pass the dependency in rather than constructing it inside — is called **dependency injection**. FastAPI has first-class support for it via `Depends`. You'll see this pattern a lot.
 
+## "But where does the argument actually come from?"
+
+This is the question that trips up almost everyone the first time they meet this pattern. You look at `get_players(self) -> list[Player]` and think:
+
+- "Where does the data I'm returning _come from_?"
+- "I returned a `list[Player]` — where does it _go_?"
+- "Who passes in the `db` argument? It's just... there?"
+
+If you're asking these, good — it means you're paying attention. Here's the mental shift that makes it click.
+
+### A function signature is a promise, not a wire
+
+`def get_players(self) -> list[Player]` is a **contract**. It says: _"If you call me, I promise to give you back a list of `Player` objects. I don't know who you are, and you don't need to know how I do it."_ That's the whole deal.
+
+The person _writing_ the adapter only has to keep that promise: produce a `list[Player]`, somehow. They don't worry about who calls it.
+
+The person _calling_ it only relies on the promise: they get a `list[Player]` back. They don't worry about how it was produced.
+
+The two sides never need to know about each other. They only need to agree on the contract. **This is the entire point of the abstraction — and it's also why "where does it come from / go to" feels mysterious: by design, neither side can see the other.** The data doesn't flow through a hidden wire; it flows through ordinary function calls and returns, one frame at a time.
+
+### The composition root: where the wires actually get connected
+
+So if the adapter and the caller never reference each other, _something_ has to introduce them. That something is a small piece of code called the **composition root** — the one place in each program where concrete things get constructed and handed to the code that needs them. It's usually `main()` or the framework's startup.
+
+We have **two** programs, so we have two composition roots — and this is exactly the scraper-as-separate-service idea from [doc 01](01-the-big-picture.md#the-scraper-is-a-separate-service) made concrete:
+
+```python
+# services/scraper/__main__.py  — the scraper service's composition root
+from libs.python.database.sqlite_adapter import SQLiteAdapter
+from scraper.pipeline import run_scraper
+
+def main() -> None:
+    db = SQLiteAdapter("data.db")   # ← the concrete adapter is BORN here
+    run_scraper(db)                 # ← and handed to code that only knows the port
+
+if __name__ == "__main__":
+    main()
+```
+
+```python
+# apps/backend/main.py  — the backend's composition root
+def get_db() -> DatabasePort:
+    return SQLiteAdapter("data.db")  # ← a second, independent birth of an adapter
+```
+
+Notice: `SQLiteAdapter("data.db")` appears in exactly these two spots and nowhere else. Everything downstream — `run_scraper`, the route handlers — receives a `DatabasePort` as an argument and never names a concrete class. That's why "switching to Postgres later" is a two-line change: you swap the constructor in these two composition roots, and nothing else in the codebase even notices.
+
+### Following one `Player` through the whole system
+
+Here's the part that answers "where does it come from / where does it go." Let's trace the **write path** (the scraper saving data) and the **read path** (the API serving it). Read these top to bottom — each indent is one function call deeper; each `←`/`→` is a value moving.
+
+**Write path — a `Player` is born in the scraper and lands in the database:**
+
+```
+main()                                    services/scraper/__main__.py
+│
+├─ db = SQLiteAdapter("data.db")          the concrete adapter is constructed
+│
+└─ run_scraper(db)                        db passed in, typed only as DatabasePort
+   │
+   ├─ players = parse_pages(...)          → list[Player] is produced here
+   │                                        (this is where the data "comes from":
+   │                                         the parser built it from HTML)
+   │
+   └─ db.save_players(players)            players handed to the contract method
+      │
+      └─ SQLiteAdapter.save_players(...)  the CONCRETE code runs (chosen back in main)
+         executes INSERT OR REPLACE ...   → the Players land in SQLite. End of journey.
+```
+
+**Read path — a `Player` comes out of the database and becomes JSON in the browser:**
+
+```
+GET /players                             browser → FastAPI receives the request
+│
+└─ list_players(db = Depends(get_db))    FastAPI calls get_db() to FILL the db argument
+   │                                       (THIS is "where the argument comes from":
+   │            ┌─ get_db() → SQLiteAdapter("data.db")   the framework constructs it
+   │            │              for you, right before the call)
+   │
+   ├─ players = db.get_players()         call the contract method
+   │  │
+   │  └─ SQLiteAdapter.get_players()     concrete code runs: SELECT ... FROM players
+   │     returns [Player(...), ...]      → list[Player] is created from DB rows
+   │  ←─ list[Player] flows back UP       (this is "where the return value goes":
+   │                                        straight back to whoever called it — here,
+   │                                        the route handler one frame up)
+   │
+   └─ return [PlayerResponse(**p.__dict__) for p in players]
+      → FastAPI serializes to JSON → HTTP response → browser renders the table
+```
+
+The thing to internalize: **an argument "comes from" whoever called the function, and a return value "goes to" whoever called the function.** Nothing more magical than that. The composition root is just the very first caller in the chain — the place where the concrete `SQLiteAdapter` gets created and passed down so that everything below it can work purely in terms of the `DatabasePort` contract.
+
+If you ever lose the thread mid-ticket, find the composition root (`main()` or `get_db()`) and read downward. Every argument deeper in the stack was put there by someone shallower.
+
 ## Common pitfalls
 
 ### Leaking storage details into the port

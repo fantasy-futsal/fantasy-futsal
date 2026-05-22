@@ -86,7 +86,7 @@ pre-commit:
 
 This means: before every commit, on the JS/TS/Svelte/JSON files you're about to commit, run ESLint with auto-fix and Prettier. Other languages (Python, etc.) have their own pre-commit blocks added the same way.
 
-The hooks `lefthook install` puts in place are local to your clone. **They won't be active until you run that command once.** First-time setup will be in the M0 instructions.
+The hooks `lefthook install` puts in place are local to your clone. **They won't be active until you run `pnpm exec lefthook install` once**, after cloning. This (and every other first-time setup step) is documented in [`CONTRIBUTING.md`](../../CONTRIBUTING.md) at the repo root — start there before your first commit.
 
 ## When does each one run?
 
@@ -107,7 +107,7 @@ The most common reactions, ranked best to worst:
 2. **Run the auto-fix.** `ruff check --fix`, `pnpm format`, etc. Often the fix is a one-liner that the tool can do for you. ✓
 3. **Ask the mentor.** If the message is genuinely confusing, copy it into the next session. ✓
 4. ~~Suppress the rule.~~ `# noqa`, `# type: ignore`, `// eslint-disable-line` — these turn off the robot for one line. Use only when you've understood the rule and disagree _with reason_. Add a comment explaining the reason.
-5. ~~Disable the check globally.~~ Changing `ruff.toml` or `mypy.ini` to make your error go away. **Don't.** The config was set deliberately; changing it requires discussion.
+5. ~~Disable the check globally.~~ Changing the `[tool.ruff]` or `[tool.mypy]` config in `pyproject.toml` to make your error go away. **Don't.** The config was set deliberately; changing it requires discussion.
 6. ~~Bypass the hook.~~ `git commit --no-verify`, `git push --no-verify`. This pushes the cost to CI (or to the human reviewer). The robot catches it next time anyway, but now everyone else is also blocked.
 
 ## Why strict settings, on a small project

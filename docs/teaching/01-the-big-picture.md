@@ -25,8 +25,8 @@ The shape of the system, end-to-end, is a one-way flow:
                               │  HTTP + HTML parsing
                               ▼
                        ┌──────────────┐
-                       │   Scraper    │   apps/backend (Python)
-                       │  (Python)    │   issue #17
+                       │   Scraper    │   services/scraper (Python)
+                       │  (service)   │   issue #17 — a SEPARATE process
                        └──────┬───────┘
                               │  typed Player / Match / Stats objects
                               ▼
@@ -64,6 +64,17 @@ The shape of the system, end-to-end, is a one-way flow:
 Read it top to bottom. Data flows down. **The frontend never knows where the data came from** — it just talks to FastAPI. FastAPI never knows whether the database is SQLite or Firestore — it just talks to `DatabasePort`. Each layer only knows about the layer directly below it.
 
 This is the single most important property of the design. It is why we can swap SQLite for Firestore later without rewriting the API, and why we could swap the scraper for a different data source without rewriting anything below it.
+
+### The scraper is a separate service
+
+Notice that the scraper is _not_ part of the backend. It's a standalone program that lives in `services/scraper/` and runs on its own — on a schedule, or by hand, whenever we want fresh data. This is deliberate, and it's worth understanding why, because it introduces a third kind of building block beyond "an app" and "a library":
+
+- The **scraper** runs, writes player data into the database, and exits. It does not serve HTTP. Nobody calls it; it calls the database.
+- The **backend** assumes the data is already in the database. It reads from the database to answer HTTP requests. It never calls the scraper, and it doesn't care _when_ the scraper last ran.
+
+The two never talk to each other directly. There's no message queue, no broker, no "scraper, please refresh" endpoint. **The database is the single source of truth, and it's the only thing the two share.** The scraper writes; the backend reads; the database sits in the middle.
+
+This is a small taste of a "microservices" style: independent processes with separate jobs that integrate through shared data rather than direct calls. For a project this size we could have put the scraper inside the backend — but keeping it separate makes the boundaries obvious and is closer to how real systems are built. You'll see exactly how the pieces get wired together in [doc 04 — Ports and adapters](04-ports-and-adapters.md).
 
 ## The five milestones
 

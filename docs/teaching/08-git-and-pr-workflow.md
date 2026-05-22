@@ -122,7 +122,11 @@ This combination — feature branches + rebase + squash — gives `master` a **l
 
 ## Lefthook will catch your commit messages
 
-This project uses [lefthook](https://lefthook.dev) to run checks before each commit. The one most relevant to you here:
+This project uses [lefthook](https://lefthook.dev) to run checks before each commit.
+
+> **One-time setup:** the hooks don't activate until you run `pnpm exec lefthook install` once, right after cloning. Until you do, commits skip every check below — which feels fine right up until CI rejects your PR for something the hook would have caught locally. Do it as part of first-time setup; the full checklist is in [`CONTRIBUTING.md`](../../CONTRIBUTING.md).
+
+The hook most relevant to you here:
 
 ```yaml
 # lefthook.yml (excerpt)
