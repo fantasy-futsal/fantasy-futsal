@@ -59,6 +59,8 @@ def main(db: DatabasePort) -> None:
 
 In production you'll usually run all three. In development, you'll mostly run stage 2 and 3 over and over, occasionally re-running stage 1 when you want fresher data.
 
+> **This whole thing is the scraper _service_** (`services/scraper/`, see [doc 02](02-monorepo-and-tooling.md)). It's a standalone program: it runs, fills the database, and exits. Stage 3 — `db.save_players(...)` — is its _only_ point of contact with the rest of the system. The backend never imports the scraper and never calls it; the two meet at the database. That single `db` argument threaded through `load()` and `main()` is the seam, and [doc 04](04-ports-and-adapters.md#but-where-does-the-argument-actually-come-from) shows exactly where it gets constructed.
+
 ## Typing the scraped data
 
 Stage 2 is the trust boundary. HTML goes in (we don't trust it). Typed objects come out (we trust them, because we just checked). This is where Pydantic earns its keep (see [doc 03](03-typed-python.md)).

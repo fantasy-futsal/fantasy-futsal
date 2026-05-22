@@ -10,13 +10,14 @@ A "monorepo" is one Git repository that contains multiple related projects. Our 
 
 - A **frontend** (SvelteKit + TypeScript)
 - A **backend** (FastAPI + Python)
-- **Shared libraries** in both languages, used by the apps
+- A **scraper service** (standalone Python — see [doc 01](01-the-big-picture.md#the-scraper-is-a-separate-service))
+- **Shared libraries** in both languages, used by the apps and the service
 
 If you've only ever seen one-repo-per-project setups, the question is reasonable: why bother? The honest answer is "for a project this size it doesn't matter that much, but it makes a few things easier":
 
 - **One PR can change frontend and backend together** when they're co-evolving (e.g. adding a new field to the player JSON).
-- **Shared code has a home.** When the scraper and the API both need the same `Player` dataclass, it lives in `libs/python/database/` and gets imported from both places — not copied.
-- **One source of truth for tooling.** One `.prettierrc`, one `ruff.toml`, one set of git hooks.
+- **Shared code has a home.** When the scraper and the API both need the same `Player` dataclass, it lives in `libs/python/database/` and gets imported from both places — not copied. This is exactly why the scraper-as-separate-service idea works without duplication.
+- **One source of truth for tooling.** One `.prettierrc`, one `pyproject.toml` holding the Python tool config, one set of git hooks.
 
 The cost is that you need workspace-aware package managers — which is what `pnpm` and `uv` are.
 
@@ -24,9 +25,11 @@ The cost is that you need workspace-aware package managers — which is what `pn
 
 ```
 fantasy-futsal/
-├── apps/                       ← deployable applications
+├── apps/                       ← long-running, user-facing applications
 │   ├── frontend/                  SvelteKit app — what users see
 │   └── backend/                   FastAPI app — the HTTP API
+├── services/                   ← standalone background processes, not user-facing
+│   └── scraper/                   scrapes futsalvplzni.cz, writes to the DB, exits
 ├── libs/                       ← shared code, never deployed on its own
 │   ├── ts/                        TypeScript libs (e.g. shared API types)
 │   └── python/                    Python libs (e.g. database/, models/)
@@ -37,21 +40,22 @@ fantasy-futsal/
 │   └── workflows/                 GitHub Actions — CI
 ├── package.json                ← pnpm root
 ├── pnpm-workspace.yaml         ← tells pnpm which folders are packages
-├── pyproject.toml              ← uv root (workspace)
-├── ruff.toml                   ← Python linter config
-├── mypy.ini                    ← Python type-checker config
+├── pyproject.toml              ← uv workspace root + Python tool config
+│                                  ([tool.ruff] and [tool.mypy] live here, not in
+│                                   separate ruff.toml / mypy.ini files)
 ├── eslint.config.js            ← TS linter config
 ├── .prettierrc                 ← TS/Markdown formatter config
 ├── lefthook.yml                ← git hooks
 └── commitlint.config.js        ← commit message rules
 ```
 
-The rule of thumb:
+The rule of thumb — there are three top-level homes for code, and the question to ask is "what kind of thing am I building?":
 
-- **Putting a thing _users_ ultimately interact with → `apps/`**
-- **Putting a thing _other code_ depends on → `libs/`**
+- **Something a _user_ interacts with, that stays running → `apps/`** (the frontend, the API)
+- **A standalone process that does a job and exits, that no user talks to directly → `services/`** (the scraper)
+- **Code that _other_ code imports, deployed by nobody on its own → `libs/`** (the database port, shared models)
 
-If you can't decide, ask. Don't invent a third top-level folder.
+The line between an app and a service is "does it serve users / stay up?" (app) versus "does it run a job and stop?" (service). If you genuinely can't decide, ask — but most things are obvious once you ask that question.
 
 ## Two workspaces, one repo
 
@@ -71,10 +75,13 @@ So when you run `pnpm install` at the repo root, pnpm installs deps for the fron
 
 ### uv workspace (Python)
 
-`pyproject.toml` at the root declares a uv workspace listing the Python packages (the backend app + each `libs/python/*` library). After `uv sync`, the imports work the way they should:
+`pyproject.toml` at the root declares a uv workspace listing the Python packages (the backend app, the scraper service, and each `libs/python/*` library). After `uv sync`, the imports work the way they should — and crucially, the backend _and_ the scraper can both import the same shared library:
 
 ```python
 # inside apps/backend/main.py
+from libs.python.database.port import DatabasePort, Player
+
+# inside services/scraper/__main__.py — same import, different process
 from libs.python.database.port import DatabasePort, Player
 ```
 
@@ -90,6 +97,7 @@ Run all of these from the **repo root** unless noted:
 | Install all Python deps | `uv sync` |
 | Start the frontend dev server | `pnpm dev` |
 | Start the backend dev server | `uv run fastapi dev apps/backend/main.py` |
+| Run the scraper once | `uv run python -m scraper` |
 | Run all linters | `pnpm lint` |
 | Auto-format everything | `pnpm format` |
 | Run all type checks | `pnpm check` |
@@ -101,12 +109,13 @@ A few of these (notably the backend ones) only work after the corresponding tick
 
 This question comes up on _every_ ticket. Some shortcuts:
 
-- **A new scraper, route handler, or background script** → `apps/backend/`
+- **A new HTTP route handler** → `apps/backend/`
+- **Scraper logic, or a new standalone batch job** → `services/scraper/` (or a new `services/<name>/`)
 - **A new page or component the user sees** → `apps/frontend/src/`
-- **A data type or function used by _more than one_ thing** → `libs/python/<name>/` or `libs/ts/<name>/`
+- **A data type or function used by _more than one_ thing** (e.g. by both the backend and the scraper) → `libs/python/<name>/` or `libs/ts/<name>/`
 - **A reusable Svelte component used by multiple pages** → `apps/frontend/src/lib/` (this is SvelteKit's convention)
 
-**Don't pre-emptively put things in `libs/`.** A piece of code only belongs in a library when at least one app actually imports it. Premature libraries are a real source of mess — they grow stubs, untested branches, and APIs designed for hypothetical callers that never show up. Start in `apps/`, move to `libs/` when a second caller appears.
+**Don't pre-emptively put things in `libs/`.** A piece of code only belongs in a library when at least two things actually import it. Premature libraries are a real source of mess — they grow stubs, untested branches, and APIs designed for hypothetical callers that never show up. Start where the code is used; move to `libs/` when a second caller appears. (The `database` library is the one place we _start_ shared, because we know from day one that both the scraper and the backend need it.)
 
 ## Tickets this prepares you for
 
