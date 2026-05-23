@@ -1,0 +1,14 @@
+[tool.uv.workspace]
+members = ["apps/backend"]
+
+[project]
+name = "fantasy-futsal"
+version = "0.0.1"
+description = "Fantasy Futsal monorepo (Python workspace root)"
+requires-python = ">=3.14"
+dependencies = [
+    "fantasy-futsal-backend",
+]
+
+[tool.uv.sources]
+fantasy-futsal-backend = { workspace = true }
