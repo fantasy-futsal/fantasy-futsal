@@ -53,7 +53,7 @@ The scraper is also Python, sharing models with the backend, but it is a
 - One typed language per side (TypeScript, typed Python) makes the strict
   type-checking story in [ADR-0003](0003-linting-and-formatting.md) uniform.
 - FastAPI's Pydantic models and SvelteKit's TS types give a clear, typed contract
-  at the HTTP boundary; shared TS API types live in `libs/ts`.
+  at the HTTP boundary; shared TS API types will live in `libs/ts`.
 - Both frameworks have first-class docs and large communities — good for a
   learner who will be reading reference material constantly.
 - Python keeps the scraper, models, and API in one language, so shared code

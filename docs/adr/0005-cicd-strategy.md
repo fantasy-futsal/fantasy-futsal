@@ -29,9 +29,11 @@ but across the whole codebase rather than only staged files:
 
 - **Linting** — ruff (Python), ESLint (TS/Svelte).
 - **Formatting check** — Prettier in `--check` mode (fails on unformatted files;
-  it does not rewrite in CI).
+  it does not rewrite in CI), run as part of the TS lint step.
 - **Type checks** — `mypy --strict` (Python), `tsc` / svelte-check (TS/Svelte).
-- **Commit message** — Conventional Commits format.
+
+Commit-message format (Conventional Commits) is enforced at the local
+`commit-msg` hook ([ADR-0004](0004-git-hooks-and-cicd.md)), not in CI.
 
 CI installs both toolchains it needs: Node (pinned by `.nvmrc`) with `pnpm`, and
 Python (**pinned to 3.14**) with `uv`.
