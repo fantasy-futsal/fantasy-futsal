@@ -1,0 +1,37 @@
+[tool.uv.workspace]
+members = ["apps/backend"]
+
+[project]
+name = "fantasy-futsal"
+version = "0.0.1"
+description = "Fantasy Futsal monorepo (Python workspace root)"
+requires-python = ">=3.14"
+dependencies = [
+    "fantasy-futsal-backend",
+]
+
+[tool.uv.sources]
+fantasy-futsal-backend = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "mypy>=1.13",
+    "ruff>=0.8",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort (import sorting)
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+]
+
+[tool.mypy]
+strict = true
+python_version = "3.14"

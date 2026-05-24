@@ -78,7 +78,7 @@ So when you run `pnpm install` at the repo root, pnpm installs deps for the fron
 `pyproject.toml` at the root declares a uv workspace listing the Python packages (the backend app, the scraper service, and each `libs/python/*` library). After `uv sync`, the imports work the way they should — and crucially, the backend _and_ the scraper can both import the same shared library:
 
 ```python
-# inside apps/backend/main.py
+# inside apps/backend/backend/app.py
 from libs.python.database.port import DatabasePort, Player
 
 # inside services/scraper/__main__.py — same import, different process
@@ -96,7 +96,7 @@ Run all of these from the **repo root** unless noted:
 | Install all JS deps | `pnpm install` |
 | Install all Python deps | `uv sync` |
 | Start the frontend dev server | `pnpm dev` |
-| Start the backend dev server | `uv run fastapi dev apps/backend/main.py` |
+| Start the backend server | `uv run python -m backend` |
 | Run the scraper once | `uv run python -m scraper` |
 | Run all linters | `pnpm lint` |
 | Auto-format everything | `pnpm format` |

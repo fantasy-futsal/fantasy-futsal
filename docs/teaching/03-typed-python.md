@@ -160,7 +160,7 @@ When mypy complains, **the fix is almost always in your code, not in mypy's conf
 In this monorepo, after `uv sync` has set up the workspace, your imports look like:
 
 ```python
-# In apps/backend/main.py
+# In apps/backend/backend/app.py
 from libs.python.database.port import DatabasePort, Player
 from libs.python.database.sqlite_adapter import SQLiteAdapter
 ```

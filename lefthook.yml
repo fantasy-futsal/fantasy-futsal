@@ -7,6 +7,12 @@ pre-commit:
     format:
       glob: '*.{js,ts,svelte,json,md,yml,yaml}'
       run: pnpm exec prettier --write {staged_files}
+    ruff:
+      glob: '*.py'
+      run: uv run ruff check --fix {staged_files}
+    mypy:
+      glob: '*.py'
+      run: uv run mypy {staged_files}
 
 commit-msg:
   parallel: false
