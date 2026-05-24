@@ -13,7 +13,7 @@ The way they talk is **HTTP**: the frontend sends an HTTP request like `GET /pla
 The simplest possible version of this is one route:
 
 ```python
-# apps/backend/main.py
+# apps/backend/backend/app.py
 from fastapi import FastAPI, Depends
 from libs.python.database.port import DatabasePort
 from libs.python.database.sqlite_adapter import SQLiteAdapter
@@ -30,7 +30,7 @@ def list_players(db: DatabasePort = Depends(get_db)) -> list[PlayerResponse]:
     return [PlayerResponse(**p.__dict__) for p in players]
 ```
 
-Run `uv run fastapi dev apps/backend/main.py`, hit `http://localhost:8000/players`, and you get JSON back. That's the whole core idea. The rest of this doc is about why each piece of that snippet looks the way it does.
+Run `uv run python -m backend`, hit `http://localhost:8000/players`, and you get JSON back. That's the whole core idea. The rest of this doc is about why each piece of that snippet looks the way it does.
 
 ## Why FastAPI specifically
 
