@@ -101,7 +101,7 @@ These all run from the repo root. Full table and explanation in [doc 02 — Mono
 | What you want | Command |
 |---|---|
 | Start the frontend dev server | `pnpm dev` |
-| Start the backend dev server | `uv run fastapi dev apps/backend/main.py` |
+| Start the backend server | `uv run python -m backend` |
 | Run the scraper once | `uv run python -m scraper` |
 | Run all linters | `pnpm lint` |
 | Auto-format everything | `pnpm format` |

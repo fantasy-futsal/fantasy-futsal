@@ -6,9 +6,9 @@
 	"scripts": {
 		"dev": "pnpm --filter @fantasy-futsal/frontend dev",
 		"build": "pnpm -r --parallel build",
-		"lint": "pnpm -r --parallel lint",
+		"lint": "pnpm -r --parallel lint && uv run ruff check .",
 		"format": "pnpm -r --parallel format && prettier --write \"*.{js,ts,json,md,yml,yaml}\"",
-		"check": "pnpm -r --parallel check",
+		"check": "pnpm -r --parallel check && uv run mypy .",
 		"test": "pnpm -r --parallel test"
 	},
 	"devEngines": {

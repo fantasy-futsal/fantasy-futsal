@@ -156,7 +156,7 @@ Different storage technology, different code _inside_ the methods, **same shape 
 The FastAPI code (ticket #20) doesn't pick `SQLiteAdapter` or `FirestoreAdapter` directly. It asks for "a `DatabasePort`" and is given one at startup:
 
 ```python
-# apps/backend/main.py (sketch)
+# apps/backend/backend/app.py (sketch)
 from fastapi import FastAPI, Depends
 from libs.python.database.port import DatabasePort, Player
 from libs.python.database.sqlite_adapter import SQLiteAdapter
@@ -216,7 +216,7 @@ if __name__ == "__main__":
 ```
 
 ```python
-# apps/backend/main.py  — the backend's composition root
+# apps/backend/backend/app.py  — the backend's composition root
 def get_db() -> DatabasePort:
     return SQLiteAdapter("data.db")  # ← a second, independent birth of an adapter
 ```
